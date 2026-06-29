@@ -15,7 +15,7 @@ const ko = {
   
   // Upload Zone
   uploadTitle: "분석할 문서를 업로드하세요",
-  uploadSubtitle: "PDF 또는 문서 이미지(PNG/JPG/WebP)를 업로드하세요. Gemma 4 31B가 텍스트와 시각 정보를 함께 분석합니다.",
+  uploadSubtitle: "텍스트가 포함된 PDF 또는 문서 이미지(PNG/JPG/WebP)를 업로드하세요. 스캔 PDF는 페이지를 이미지로 저장해 올리면 더 안정적으로 분석됩니다.",
   samplesTitle: "샘플 문서로 바로 체험하기",
   
   sampleInsTitle: "무배당 케어플러스 암보험 약관",
@@ -138,7 +138,7 @@ const en: TranslationKeys = {
   
   // Upload Zone
   uploadTitle: "Upload document to analyze",
-  uploadSubtitle: "Upload a PDF or document image (PNG/JPG/WebP). Gemma 4 31B analyzes text and visual evidence together.",
+  uploadSubtitle: "Upload a text-based PDF or document image (PNG/JPG/WebP). For scanned PDFs, export the page as an image first for more reliable analysis.",
   samplesTitle: "Try with a sample document",
   
   sampleInsTitle: "Cancer Insurance Policy",

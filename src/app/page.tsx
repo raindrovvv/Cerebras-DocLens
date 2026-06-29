@@ -238,14 +238,18 @@ export default function Home() {
 
       const parseData = await parseRes.json();
 
-      // Warn user if scanned PDF detected
+      // Stop early for scanned/image-only PDFs. OCR inside Vercel would be heavy,
+      // so we guide users to the lighter multimodal image path instead.
       if (parseData.isLikelyScanned) {
         showToast(
           lang === "ko"
-            ? "이 PDF는 스캔 이미지 파일로 보입니다. 텍스트 레이어가 없어 분석 결과가 정확하지 않을 수 있습니다."
-            : "This PDF appears to be a scanned image file. Lack of text layer may result in inaccurate analysis.",
+            ? "스캔 PDF라 텍스트를 읽을 수 없습니다. PDF 페이지를 PNG/JPG/WebP 이미지로 저장한 뒤 다시 업로드해 주세요."
+            : "This looks like a scanned PDF with no readable text layer. Export the page as PNG/JPG/WebP and upload the image instead.",
           "warning"
         );
+        setStatus("idle");
+        setPageCount(parseData.pageCount || 0);
+        return;
       }
 
       setPageCount(parseData.pageCount);
