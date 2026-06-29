@@ -18,8 +18,21 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cerebras DocLens - AI 복잡한 문서 눈높이 설명 서비스",
-  description: "보험 약관, 법률 계약서 등 어려운 문서를 어린이, 시니어, 일반인, 전문가 눈높이로 쉽게 이해하세요.",
+  metadataBase: new URL("https://cerebras-ai-doc.vercel.app"),
+  title: "Cerebras DocLens - Multi-Agent PDF Analysis with Gemma 4 31B",
+  description: "Turn complex PDFs into plain-language guidance with Gemma 4 31B on Cerebras. Extract summaries, risks, costs, timelines, actions, and persona-specific explanations.",
+  openGraph: {
+    title: "Cerebras DocLens - Multi-Agent PDF Analysis with Gemma 4 31B",
+    description: "A Cerebras x Gemma 4 hackathon project for fast, multi-agent document understanding across PDFs and document images.",
+    url: "https://cerebras-ai-doc.vercel.app",
+    siteName: "Cerebras DocLens",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cerebras DocLens - Multi-Agent PDF Analysis with Gemma 4 31B",
+    description: "Fast multi-agent document analysis powered by Gemma 4 31B on Cerebras.",
+  },
 };
 
 export default function RootLayout({
@@ -29,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="ko"
+      lang="en"
       className={`${ebGaramond.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <head>
