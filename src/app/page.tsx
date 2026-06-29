@@ -168,7 +168,6 @@ export default function Home() {
   };
 
   const handleSelectSample = async (type: "insurance" | "legal" | "medical" | "aflac") => {
-    if (!ensureApiKeyBeforeAnalysis()) return;
     setStatus("analyzing");
     setAgentDurations(undefined); // Reset durations for fresh timing
     setTimingSource("demo");
