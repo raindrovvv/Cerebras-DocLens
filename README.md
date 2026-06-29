@@ -8,7 +8,17 @@ The app uses **Gemma 4 31B through the Cerebras API** as the core AI engine. It 
 - Repository: https://github.com/raindrovvv/Cerebras-DocLens
 - Core model: `gemma-4-31b`
 - Primary provider: Cerebras API
+- Demo video: https://x.com/raindrovvv/status/2071482635063632182
 - Baseline comparison: GPT-4.1
+- Submitted tracks: Multi-Agent + Multimodal, Enterprise Impact
+
+## One-Minute Pitch
+
+Cerebras DocLens turns complex PDFs like insurance policies, contracts, and medical consent forms into plain-language guidance using **Gemma 4 31B on Cerebras**.
+
+It runs a shared-evidence intake step, then parallel specialist agents extract summaries, risks, costs, timelines, next actions, and persona-specific explanations for children, seniors, general users, and experts.
+
+The core idea: **fast Cerebras inference makes multi-agent document review feel interactive, not slow**.
 
 ## What Judges Should Try
 
@@ -80,7 +90,7 @@ The analysis pipeline uses multiple agents:
 - **Action Agent**: turns the analysis into a practical checklist.
 - **Persona Agent**: rewrites the same document for children, seniors, general users, and experts.
 
-The upload flow supports text PDFs and document images. PDF pages can also provide visual page images to the analysis route when available.
+The upload flow supports text-based PDFs and document images such as PNG, JPG, and WebP. For scanned PDFs without a readable text layer, the app gives a clear fallback instruction: export the page as an image and upload that image for multimodal analysis.
 
 Relevant files:
 
