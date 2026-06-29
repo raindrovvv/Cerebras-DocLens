@@ -1,5 +1,76 @@
 import { NextResponse } from "next/server";
-import { PDFParse } from "pdf-parse";
+
+export const runtime = "nodejs";
+
+function ensurePdfRuntimePolyfills() {
+  const globalScope = globalThis as any;
+
+  if (!globalScope.DOMMatrix) {
+    globalScope.DOMMatrix = class DOMMatrix {
+      a = 1;
+      b = 0;
+      c = 0;
+      d = 1;
+      e = 0;
+      f = 0;
+      is2D = true;
+      isIdentity = true;
+
+      constructor(init?: number[] | string) {
+        if (Array.isArray(init)) {
+          this.a = Number(init[0] ?? 1);
+          this.b = Number(init[1] ?? 0);
+          this.c = Number(init[2] ?? 0);
+          this.d = Number(init[3] ?? 1);
+          this.e = Number(init[4] ?? 0);
+          this.f = Number(init[5] ?? 0);
+          this.isIdentity = this.a === 1 && this.b === 0 && this.c === 0 && this.d === 1 && this.e === 0 && this.f === 0;
+        }
+      }
+
+      multiplySelf() { return this; }
+      preMultiplySelf() { return this; }
+      translateSelf() { return this; }
+      scaleSelf() { return this; }
+      rotateSelf() { return this; }
+      invertSelf() { return this; }
+      transformPoint(point: any) { return point; }
+    };
+  }
+
+  if (!globalScope.ImageData) {
+    globalScope.ImageData = class ImageData {
+      data: Uint8ClampedArray;
+      width: number;
+      height: number;
+
+      constructor(dataOrWidth: Uint8ClampedArray | number, widthOrHeight: number, height?: number) {
+        if (typeof dataOrWidth === "number") {
+          this.width = dataOrWidth;
+          this.height = widthOrHeight;
+          this.data = new Uint8ClampedArray(this.width * this.height * 4);
+        } else {
+          this.data = dataOrWidth;
+          this.width = widthOrHeight;
+          this.height = height || 0;
+        }
+      }
+    };
+  }
+
+  if (!globalScope.Path2D) {
+    globalScope.Path2D = class Path2D {
+      addPath() {}
+      closePath() {}
+      moveTo() {}
+      lineTo() {}
+      bezierCurveTo() {}
+      quadraticCurveTo() {}
+      rect() {}
+      arc() {}
+    };
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -37,6 +108,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Only PDF or image files are supported" }, { status: 400 });
     }
 
+    ensurePdfRuntimePolyfills();
+    const { PDFParse } = await import("pdf-parse");
     const buffer = Buffer.from(arrayBuffer);
 
     const parser = new PDFParse({ data: buffer });
@@ -62,6 +135,10 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("PDF parsing endpoint error:", error);
-    return NextResponse.json({ error: "Failed to parse PDF document" }, { status: 500 });
+    return NextResponse.json({
+      error: "Failed to parse PDF document",
+      detail: error instanceof Error ? error.message : String(error),
+      code: "pdf_parse_failed"
+    }, { status: 500 });
   }
 }

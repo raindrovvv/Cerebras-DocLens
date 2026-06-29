@@ -227,7 +227,13 @@ export default function Home() {
       });
 
       if (!parseRes.ok) {
-        throw new Error(lang === "ko" ? "PDF 텍스트를 추출하는 데 실패했습니다." : "Failed to extract text from PDF.");
+        const parseError = await parseRes.json().catch(() => ({}));
+        const detail = parseError.detail || parseError.error || "";
+        throw new Error(
+          lang === "ko"
+            ? `PDF 텍스트를 추출하는 데 실패했습니다.${detail ? ` (${detail})` : ""}`
+            : `Failed to extract text from PDF.${detail ? ` (${detail})` : ""}`
+        );
       }
 
       const parseData = await parseRes.json();
