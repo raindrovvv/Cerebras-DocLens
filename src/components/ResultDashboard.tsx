@@ -487,18 +487,21 @@ export default function ResultDashboard({ result, overallDuration = 2.4, onReset
 
       {/* Speed Comparison Bar Chart — Cerebras vs GPT-4.1 */}
       {agentDurations && Object.keys(agentDurations).length > 0 && (() => {
+        const hasCerebrasReal = Boolean(realSpeedData["cerebras"] || provider === "cerebras");
+        const hasOpenAIReal = Boolean(realSpeedData["openai"] || provider === "openai");
         const hasBothReal = Boolean(realSpeedData["cerebras"] && realSpeedData["openai"]);
-        const cerebrasData = realSpeedData["cerebras"]?.agents || {};
-        const openaiData = realSpeedData["openai"]?.agents || {};
+        const cerebrasData = realSpeedData["cerebras"]?.agents || (provider === "cerebras" ? agentDurations : {});
+        const openaiData = realSpeedData["openai"]?.agents || (provider === "openai" ? agentDurations : {});
         const currentOverall = Math.max(overallDuration, 0.01);
-        const cerebrasOverall = realSpeedData["cerebras"]?.overall || (provider === "cerebras" ? currentOverall : currentOverall * 0.13);
-        const openaiOverall = realSpeedData["openai"]?.overall || (provider === "openai" ? currentOverall : currentOverall * 7.5);
-        const rawSpeedup = openaiOverall / Math.max(cerebrasOverall, 0.01);
-        const speedupWinner = rawSpeedup >= 1 ? "Cerebras" : "GPT-4.1";
-        const speedupRatio = rawSpeedup >= 1 ? rawSpeedup : 1 / Math.max(rawSpeedup, 0.01);
-        const maxOverall = Math.max(cerebrasOverall, openaiOverall, 0.01);
-        const cerebrasOverallPct = Math.max(6, (cerebrasOverall / maxOverall) * 100);
-        const openaiOverallPct = Math.max(6, (openaiOverall / maxOverall) * 100);
+        const cerebrasOverall = realSpeedData["cerebras"]?.overall ?? (provider === "cerebras" ? currentOverall : null);
+        const openaiOverall = realSpeedData["openai"]?.overall ?? (provider === "openai" ? currentOverall : null);
+        const canCompareOverall = cerebrasOverall !== null && openaiOverall !== null;
+        const rawSpeedup = canCompareOverall ? openaiOverall / Math.max(cerebrasOverall, 0.01) : null;
+        const speedupWinner = rawSpeedup === null ? null : rawSpeedup >= 1 ? "Cerebras" : "GPT-4.1";
+        const speedupRatio = rawSpeedup === null ? null : rawSpeedup >= 1 ? rawSpeedup : 1 / Math.max(rawSpeedup, 0.01);
+        const maxOverall = Math.max(cerebrasOverall ?? 0, openaiOverall ?? 0, 0.01);
+        const cerebrasOverallPct = cerebrasOverall === null ? 0 : Math.max(6, (cerebrasOverall / maxOverall) * 100);
+        const openaiOverallPct = openaiOverall === null ? 0 : Math.max(6, (openaiOverall / maxOverall) * 100);
         const agentMeta: Record<string, { label: string; icon: string }> = {
           intake: { label: "Intake", icon: "🧠" },
           summary: { label: "Summary", icon: "📄" },
@@ -514,11 +517,12 @@ export default function ResultDashboard({ result, overallDuration = 2.4, onReset
             label: normalizedAgent.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()),
             icon: "⚡",
           };
-          const cerebrasTime = cerebrasData[agent] ?? (provider === "cerebras" ? duration : duration * 0.13);
-          const openaiTime = openaiData[agent] ?? (provider === "openai" ? duration : duration * 7.5);
-          const maxTime = Math.max(cerebrasTime, openaiTime, 0.01);
-          const winner = cerebrasTime <= openaiTime ? "Cerebras" : "GPT-4.1";
-          const ratio = winner === "Cerebras"
+          const cerebrasTime = cerebrasData[agent] ?? null;
+          const openaiTime = openaiData[agent] ?? null;
+          const canCompareRow = cerebrasTime !== null && openaiTime !== null;
+          const maxTime = Math.max(cerebrasTime ?? 0, openaiTime ?? 0, 0.01);
+          const winner = canCompareRow ? (cerebrasTime <= openaiTime ? "Cerebras" : "GPT-4.1") : null;
+          const ratio = !canCompareRow ? null : winner === "Cerebras"
             ? openaiTime / Math.max(cerebrasTime, 0.01)
             : cerebrasTime / Math.max(openaiTime, 0.01);
 
@@ -527,28 +531,31 @@ export default function ResultDashboard({ result, overallDuration = 2.4, onReset
             ...meta,
             cerebrasTime,
             openaiTime,
-            cerebrasPct: Math.max(5, (cerebrasTime / maxTime) * 100),
-            openaiPct: Math.max(5, (openaiTime / maxTime) * 100),
+            cerebrasPct: cerebrasTime === null ? 0 : Math.max(5, (cerebrasTime / maxTime) * 100),
+            openaiPct: openaiTime === null ? 0 : Math.max(5, (openaiTime / maxTime) * 100),
             winner,
             ratio,
-            isOutlier: winner !== speedupWinner,
+            isOutlier: winner !== null && speedupWinner !== null && winner !== speedupWinner,
           };
         });
-        const cerebrasWins = compareRows.filter((row) => row.winner === "Cerebras").length;
-        const openaiWins = compareRows.filter((row) => row.winner === "GPT-4.1").length;
+        const measuredRows = compareRows.filter((row) => row.winner !== null);
+        const cerebrasWins = measuredRows.filter((row) => row.winner === "Cerebras").length;
+        const openaiWins = measuredRows.filter((row) => row.winner === "GPT-4.1").length;
         const outlierRows = compareRows.filter((row) => row.isOutlier);
         const outlierLabel = outlierRows.map((row) => row.label).join(", ");
         const speedCopy = {
           title: lang === "ko" ? "공정 병렬 추론 속도 비교" : "Fair parallel inference comparison",
           measured: lang === "ko" ? "실측 데이터" : "Measured",
-          estimated: lang === "ko" ? "추정 포함" : "Estimated",
+          estimated: lang === "ko" ? "미측정 포함" : "Partially measured",
           measuredHelp: lang === "ko"
             ? "비교 모드는 두 provider 모두 같은 문서 인테이크와 전문 에이전트 파이프라인을 실행한 실제 측정값으로 표시합니다."
             : "Compare mode shows measured results with both providers running the same document-intake and specialist-agent pipeline.",
           estimatedHelp: lang === "ko"
-            ? "현재는 한쪽 provider 실측값이 없어 추정치를 함께 보여줍니다. 상단 비교 모드로 다시 분석하면 실측 비교로 바뀝니다."
-            : "One provider is still estimated. Run Compare again to replace this with measured results.",
+            ? "현재는 한쪽 provider 실측값이 없어 미측정으로 표시합니다. 상단 비교 모드로 다시 분석하면 실측 비교로 바뀝니다."
+            : "One provider has not been measured yet. Run Compare again to show measured results for both providers.",
           overallWinner: lang === "ko" ? "전체 승자" : "Overall Winner",
+          compareRequired: lang === "ko" ? "비교 모드 필요" : "Run Compare",
+          unmeasured: lang === "ko" ? "미측정" : "Not measured",
           overallBasis: lang === "ko" ? "전체 분석 완료 시간 기준" : "Based on total completion time",
           agentScore: lang === "ko" ? "에이전트 승패" : "Agent Score",
           agentScoreHelp: lang === "ko" ? "인테이크와 전문 에이전트별 개별 승패" : "Per-stage wins across the intake and specialist agents",
@@ -561,8 +568,8 @@ export default function ResultDashboard({ result, overallDuration = 2.4, onReset
             : (lang === "ko" ? "모든 에이전트가 전체 승자와 같은 방향입니다." : "All agents match the overall winner trend."),
           interpretation: lang === "ko" ? "해석" : "Interpretation",
           interpretationHelp: lang === "ko"
-            ? "전체 승자는 사용자 체감 시간, 에이전트 승패는 내부 병목과 예외 구간을 보여줍니다."
-            : "Overall winner reflects user-perceived latency; agent wins expose bottlenecks and exceptions.",
+            ? "두 provider가 모두 실측된 경우에만 승자와 배율을 계산합니다. 미측정 상태에서는 비교 모드 실행이 필요합니다."
+            : "Winner and speedup are calculated only when both providers have measured data. Otherwise, run Compare mode first.",
           howToRead: lang === "ko" ? "읽는 법" : "How to read",
           howToReadHelp: lang === "ko"
             ? "막대가 짧을수록 빠릅니다. Intake는 원문을 한 번 압축하고, 아래 전문 에이전트들은 그 캐시를 재사용합니다."
@@ -594,10 +601,10 @@ export default function ResultDashboard({ result, overallDuration = 2.4, onReset
                   {hasBothReal ? speedCopy.measuredHelp : speedCopy.estimatedHelp}
                 </p>
               </div>
-              <div className={`rounded-lg px-4 py-3 border ${speedupWinner === "Cerebras" ? "border-primary/35 bg-primary/10" : "border-amber-500/35 bg-amber-500/10"}`}>
+              <div className={`rounded-lg px-4 py-3 border ${speedupWinner === "Cerebras" ? "border-primary/35 bg-primary/10" : speedupWinner === "GPT-4.1" ? "border-amber-500/35 bg-amber-500/10" : "border-hairline bg-surface-soft"}`}>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">{speedCopy.overallWinner}</p>
-                <p className={`font-mono text-lg font-bold ${speedupWinner === "Cerebras" ? "text-primary" : "text-amber-300"}`}>
-                  {speedupWinner} {speedupRatio.toFixed(1)}x {speedCopy.faster}
+                <p className={`font-mono text-lg font-bold ${speedupWinner === "Cerebras" ? "text-primary" : speedupWinner === "GPT-4.1" ? "text-amber-300" : "text-muted"}`}>
+                  {speedupWinner && speedupRatio ? `${speedupWinner} ${speedupRatio.toFixed(1)}x ${speedCopy.faster}` : speedCopy.compareRequired}
                 </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">{speedCopy.overallBasis}</p>
               </div>
@@ -609,9 +616,15 @@ export default function ResultDashboard({ result, overallDuration = 2.4, onReset
               <div className="rounded-lg border border-hairline bg-surface-soft p-3 text-ink shadow-sm">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1.5">{speedCopy.agentScore}</p>
                 <p className="text-sm font-semibold">
-                  <span className="text-primary">Cerebras {cerebrasWins}</span>
-                  <span className="text-muted-foreground"> : </span>
-                  <span className="text-amber-300">GPT-4.1 {openaiWins}</span>
+                  {measuredRows.length > 0 ? (
+                    <>
+                      <span className="text-primary">Cerebras {cerebrasWins}</span>
+                      <span className="text-muted-foreground"> : </span>
+                      <span className="text-amber-300">GPT-4.1 {openaiWins}</span>
+                    </>
+                  ) : (
+                    <span className="text-muted">{speedCopy.compareRequired}</span>
+                  )}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">{speedCopy.agentScoreHelp}</p>
               </div>
@@ -636,7 +649,7 @@ export default function ResultDashboard({ result, overallDuration = 2.4, onReset
               <div className="rounded-lg border border-primary/25 bg-primary/10 p-3 text-ink shadow-sm">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-semibold text-primary">Cerebras</span>
-                  <span className="font-mono text-lg font-bold text-primary">{cerebrasOverall.toFixed(2)}s</span>
+                  <span className="font-mono text-lg font-bold text-primary">{cerebrasOverall === null ? speedCopy.unmeasured : `${cerebrasOverall.toFixed(2)}s`}</span>
                 </div>
                 <div className="h-2 rounded-full bg-primary/10 overflow-hidden">
                   <div className="h-full rounded-full bg-primary" style={{ width: `${cerebrasOverallPct}%` }} />
@@ -645,7 +658,7 @@ export default function ResultDashboard({ result, overallDuration = 2.4, onReset
               <div className="rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-ink shadow-sm">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-semibold text-amber-300">GPT-4.1</span>
-                  <span className="font-mono text-lg font-bold text-amber-300">{openaiOverall.toFixed(2)}s</span>
+                  <span className="font-mono text-lg font-bold text-amber-300">{openaiOverall === null ? speedCopy.unmeasured : `${openaiOverall.toFixed(2)}s`}</span>
                 </div>
                 <div className="h-2 rounded-full bg-amber-500/10 overflow-hidden">
                   <div className="h-full rounded-full bg-amber-400" style={{ width: `${openaiOverallPct}%` }} />
@@ -674,7 +687,7 @@ export default function ResultDashboard({ result, overallDuration = 2.4, onReset
                         </span>
                       )}
                       <span className={`text-xs font-mono font-semibold ${row.winner === "Cerebras" ? "text-primary" : "text-amber-300"}`}>
-                        {row.winner} {row.ratio.toFixed(1)}x {speedCopy.faster}
+                        {row.winner && row.ratio ? `${row.winner} ${row.ratio.toFixed(1)}x ${speedCopy.faster}` : speedCopy.unmeasured}
                       </span>
                     </div>
                   </div>
@@ -684,14 +697,14 @@ export default function ResultDashboard({ result, overallDuration = 2.4, onReset
                       <div className="h-2 rounded-full bg-primary/15 overflow-hidden">
                         <div className="h-full rounded-full bg-primary" style={{ width: `${row.cerebrasPct}%` }} />
                       </div>
-                      <span className="text-right font-mono text-xs text-primary">{row.cerebrasTime.toFixed(2)}s</span>
+                      <span className="text-right font-mono text-xs text-primary">{row.cerebrasTime === null ? speedCopy.unmeasured : `${row.cerebrasTime.toFixed(2)}s`}</span>
                     </div>
                     <div className="grid grid-cols-[72px_1fr_70px] items-center gap-3">
                       <span className="text-xs font-semibold text-amber-300">GPT-4.1</span>
                       <div className="h-2 rounded-full bg-amber-500/15 overflow-hidden">
                         <div className="h-full rounded-full bg-amber-400" style={{ width: `${row.openaiPct}%` }} />
                       </div>
-                      <span className="text-right font-mono text-xs text-amber-300">{row.openaiTime.toFixed(2)}s</span>
+                      <span className="text-right font-mono text-xs text-amber-300">{row.openaiTime === null ? speedCopy.unmeasured : `${row.openaiTime.toFixed(2)}s`}</span>
                     </div>
                   </div>
                 </div>
