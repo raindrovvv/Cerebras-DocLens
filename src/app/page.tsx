@@ -81,6 +81,24 @@ export default function Home() {
     return message.toLowerCase().includes("missing") && message.toLowerCase().includes("api key");
   };
 
+  const getMissingProviderForCurrentMode = () => {
+    if (compareBoth) {
+      if (!hasCerebrasUserKey) return "cerebras" as const;
+      if (!hasOpenAIUserKey) return "openai" as const;
+      return null;
+    }
+    if (provider === "cerebras" && !hasCerebrasUserKey) return "cerebras" as const;
+    if (provider === "openai" && !hasOpenAIUserKey) return "openai" as const;
+    return null;
+  };
+
+  const ensureApiKeyBeforeAnalysis = () => {
+    const missingProvider = getMissingProviderForCurrentMode();
+    if (!missingProvider) return true;
+    promptForApiKey(missingProvider);
+    return false;
+  };
+
   const saveApiKeys = () => {
     try {
       localStorage.setItem("cerebras_doclens_api_keys", JSON.stringify(getRequestApiKeys()));
@@ -150,6 +168,7 @@ export default function Home() {
   };
 
   const handleSelectSample = async (type: "insurance" | "legal" | "medical" | "aflac") => {
+    if (!ensureApiKeyBeforeAnalysis()) return;
     setStatus("analyzing");
     setAgentDurations(undefined); // Reset durations for fresh timing
     setTimingSource("demo");
@@ -193,6 +212,7 @@ export default function Home() {
   };
 
   const handleFileSelect = async (file: File) => {
+    if (!ensureApiKeyBeforeAnalysis()) return;
     setStatus("parsing");
     setFileName(file.name);
     setPageCount(0);
@@ -329,6 +349,10 @@ export default function Home() {
     }
 
     const nextPayload = { ...payloadForLanguage, lang: nextLang };
+    if (!ensureApiKeyBeforeAnalysis()) {
+      setLang(nextLang);
+      return;
+    }
     setLang(nextLang);
     setStatus("analyzing");
     setAgentDurations(undefined);
