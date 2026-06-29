@@ -109,6 +109,10 @@ export async function POST(req: Request) {
     }
 
     ensurePdfRuntimePolyfills();
+    // Preload pdf-parse's bundled worker. Without this, pdfjs tries to dynamically
+    // import pdfjs-dist/legacy/build/pdf.worker.mjs, which is not reliably included
+    // in Vercel serverless bundles.
+    await import("pdf-parse/worker");
     const { PDFParse } = await import("pdf-parse");
     const buffer = Buffer.from(arrayBuffer);
 
