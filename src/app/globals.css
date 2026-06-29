@@ -1,26 +1,239 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --color-primary: #cc785c;
+  --color-primary-active: #a9583e;
+  --color-primary-disabled: #e6dfd8;
+  
+  --color-canvas: var(--canvas-bg);
+  --color-surface-soft: var(--surface-soft-bg);
+  --color-surface-card: var(--surface-card-bg);
+  --color-surface-cream-strong: var(--surface-cream-strong-bg);
+  --color-surface-dark: var(--surface-dark-bg);
+  --color-surface-dark-elevated: var(--surface-dark-elevated-bg);
+  --color-surface-dark-soft: var(--surface-dark-soft-bg);
+  --color-hairline: var(--hairline-border);
+  
+  --color-ink: var(--ink-text);
+  --color-body-strong: var(--body-strong-text);
+  --color-body: var(--body-text);
+  --color-muted: var(--muted-text);
+  --color-muted-soft: var(--muted-soft-text);
+  
+  --color-on-dark: #faf9f5;
+  --color-on-dark-soft: #a09d96;
+  
+  --color-accent-teal: #5db8a6;
+  --color-accent-amber: #e8a55a;
+  
+  --color-success-green: #5db872;
+  --color-error-red: #c64545;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: "Pretendard Variable", Pretendard, var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: var(--font-eb-garamond), Georgia, serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+  
+  --animate-fade-in: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-scale-up: scale-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scale-up {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 }
 
+html {
+  color-scheme: light;
+  --background: #faf9f5;
+  --foreground: #141413;
+  
+  --canvas-bg: #faf9f5;
+  --surface-soft-bg: #f5f0e8;
+  --surface-card-bg: #efe9de;
+  --surface-cream-strong-bg: #e8e0d2;
+  --surface-dark-bg: #181715;
+  --surface-dark-elevated-bg: #252320;
+  --surface-dark-soft-bg: #1f1e1b;
+  --hairline-border: #e6dfd8;
+  
+  --ink-text: #141413;
+  --body-strong-text: #252523;
+  --body-text: #3d3d3a;
+  --muted-text: #6c6a64;
+  --muted-soft-text: #8e8b82;
+}
+
+html.dark, .dark {
+  color-scheme: dark;
+  --background: #181715;
+  --foreground: #faf9f5;
+  
+  --canvas-bg: #181715;
+  --surface-soft-bg: #1e1d1a;
+  --surface-card-bg: #252321;
+  --surface-cream-strong-bg: #2d2a27;
+  --surface-dark-bg: #11100e;
+  --surface-dark-elevated-bg: #181715;
+  --surface-dark-soft-bg: #1b1a18;
+  --hairline-border: #33312e;
+  
+  --ink-text: #faf9f5;
+  --body-strong-text: #e8e6e1;
+  --body-text: #d0cdc6;
+  --muted-text: #a09d96;
+  --muted-soft-text: #78756e;
+}
+
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1;
+  transition: background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Base Editorial Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  transition: color 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Scrollbar tweaks matching canvas */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--canvas-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-card-bg);
+  border-radius: 4px;
+  border: 2px solid var(--canvas-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--hairline-border);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+/* Animations utility helpers */
+.animate-fade-in {
+  animation: var(--animate-fade-in);
+}
+
+.animate-scale-up {
+  animation: var(--animate-scale-up);
+}
+
+/* Anthropic Design System Utility classes */
+
+/* Feature Card (Cream Surface) */
+.anthro-card {
+  background-color: var(--surface-card-bg);
+  border: 1px solid var(--hairline-border);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.anthro-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: #cc785c;
+  box-shadow: 0 4px 12px rgba(20, 20, 19, 0.04);
+}
+
+/* Product mockup card (Dark Navy Surface) */
+.anthro-dark-card {
+  background-color: var(--surface-dark-bg);
+  color: #faf9f5;
+  border-radius: 12px;
+  border: 1px solid var(--hairline-border);
+}
+
+/* Primary Coral CTA Button */
+.anthro-btn-primary {
+  background-color: #cc785c;
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.anthro-btn-primary:hover:not(:disabled) {
+  background-color: #a9583e;
+  transform: translateY(-1px);
+}
+
+/* Secondary Button with Hairline Border */
+.anthro-btn-secondary {
+  background-color: var(--canvas-bg);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  border: 1px solid var(--hairline-border);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.anthro-btn-secondary:hover:not(:disabled) {
+  background-color: var(--surface-card-bg);
+  border-color: #cc785c;
+  transform: translateY(-1px);
+}
+
+/* Secondary Button used inside Dark mockups */
+.anthro-btn-secondary-on-dark {
+  background-color: #252320;
+  color: #faf9f5;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.anthro-btn-secondary-on-dark:hover {
+  background-color: #1f1e1b;
+  border-color: #cc785c;
+}
+
+/* Explicit text readability overrides inside dark panels */
+.text-on-dark {
+  color: #faf9f5 !important;
+}
+
+.text-on-dark-soft {
+  color: #a09d96 !important;
 }
